@@ -16,7 +16,7 @@ def main():
       },
       "steps": [{
           "name": "update-version",
-          "expected_materials": [["ALLOW", "*"]],
+          "expected_materials": [["ALLOW", "foo.py"], ["ALLOW", "*"]],
           "expected_products": [["MODIFY", "foo.py"]],
           "pubkeys": [key_bob["keyid"]],
           "expected_command": [],
@@ -43,7 +43,8 @@ def main():
           "pubkeys": [key_alice["keyid"]],
           "expected_command": [],
           "threshold": 1,
-        }]
+        }],
+      "inspect":[],
   })
 
   metadata = Metablock(signed=layout)
