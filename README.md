@@ -14,7 +14,6 @@ pip install -r requirements.txt
 Get demo files
 ```bash
 git clone https://github.com/in-toto/ite-4-demo.git
-cd ite-4-demo
 ```
 
 
@@ -24,6 +23,8 @@ cd ite-4-demo
 Since we don't have this project yet, we need to clone it first. But in the real world, it is more likely that Bob and Alice already has the project locally.
 
 ```bash
+cd ite-4-demo
+
 cd functionary_bob
 git clone https://github.com/in-toto/ite-4-demo-test-repo.git
 
