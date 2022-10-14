@@ -1,0 +1,4 @@
+[submodule "in-toto"]
+	path = in-toto
+	url = https://github.com/SolidifiedRay/in-toto.git
+	branch = ITE-4-monkey-patch
