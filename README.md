@@ -1,52 +1,63 @@
 # ITE-4-demo
 
+A simple demo that shows some of the capabilities that ITE-4 enables.
+
+
 ## Demo setup
 
-For this demo, you may need to install [github cli tool](https://cli.github.com/)
+Clone this repository recursively. It includes a monkey-patched version of
+in-toto. Install this version of in-toto to your machine.
 
-Install the monkey patch version of in-toto
+```shell
+git clone --recursive https://github.com/in-toto/ite-4-demo.git
+cd ite-4-demo/in-toto
+pip install .
 
-```bash
-git clone https://github.com/SolidifiedRay/in-toto.git -b ITE-4-monkey-patch
-pip install -r requirements.txt
+# Go back to the demo's home directory.
+cd ..
 ```
 
-Get demo files
-```bash
-git clone https://github.com/in-toto/ite-4-demo.git
-```
+For this demo, make sure you have the [github cli tool](https://cli.github.com/)
+installed.
 
 
 ## Run the demo commands
 
-### Clone project source code (Bob & Alice)
-Since we don't have this project yet, we need to clone it first. But in the real world, it is more likely that Bob and Alice already has the project locally.
+### 1. Clone project source code (Bob & Alice)
 
-```bash
-cd ite-4-demo
+Since we don't have the project installed locally, we will be cloning them 
+ourselves. But in the real world, it is more likely that Bob and Alice already
+have the project locally.
 
-cd functionary_bob
-git clone https://github.com/in-toto/ite-4-demo-test-repo.git
+**Note:** If you are testing this demo locally, use a personal fork of the
+`ite-4-demo-test-repo` since you will need access to make and merge PR's. So
+replace the repo link below with one pointing to your fork.
 
-cd ../owner_alice
-git clone https://github.com/in-toto/ite-4-demo-test-repo.git
+```shell
+git clone https://github.com/in-toto/ite-4-demo-test-repo.git functionary_bob/ite-4-demo-test-repo
+git clone https://github.com/in-toto/ite-4-demo-test-repo.git owner_alice/ite-4-demo-test-repo
 ```
 
-### Define software supply chain layout (Alice)
+### 2. Define the software supply chain layout (Alice)
 
-```bash
+```shell
+cd owner_alice
 python create_layout.py
 ```
 
-### Update version number (Bob)
-Before Bob start making changes, Bob will create a `feature` branch
-```
-cd ../functionary_bob/ite-4-demo-test-repo
+### 3. Update version number (Bob)
 
+Before Bob makes any changes, he will first create a `feature` branch that will
+contain his changes.
+
+```shell
+cd ../functionary_bob/ite-4-demo-test-repo
 git checkout -b feature
 ```
 
-Bob uses `in-toot-record` command to records the state of the files he will modify. The material will be previous merged commit.
+Bob uses `in-toot-record` command to record the state of the files he will
+modify. The material will be latest merge-commit.
+
 ```shell
 # We use a generic uri to represent a Github entity
 # A github commit looks like: github:org/repo:commit:id
@@ -54,40 +65,60 @@ Bob uses `in-toot-record` command to records the state of the files he will modi
 in-toto-record start --step-name update-version --key ../bob -m github:in-toto/ite-4-demo-test-repo:commit:{previously merged commit id}
 ```
 
-Then Bob uses an editor of his choice to update the version number in `foo.py`
-```
+Then, Bob uses an editor of his choice to update the version number in `foo.py`
+
+```shell
+# Change version number from v0 to v1
 sed -i.bak 's/v0/v1/' foo.py && rm foo.py.bak
 ```
 
-Finally, Bob records the state of the files after the modification and produces a link metadata file called `update-version.[Bob's keyid].link`.
+Finally, Bob records the state of the files after the modification and produces
+a link metadata file called `update-version.[Bob's keyid].link`.
+
 ```
 in-toto-record stop --step-name update-version --key ../bob -p foo.py
 ```
 
-### Submit a pull request (Bob)
-Bob has done his work and he will make a commit and push to the repo
-```
+### 4. Submit a pull request (Bob)
+
+Bob has done his work and will commit and push the changes to the remote repo.
+
+```shell
 git add foo.py
-git commit -m "Update version"
+git commit -m "update version"
 git push --set-upstream origin feature
 ```
 
-Then Bob submit a pull request using github cli tool and use `in-toto-run` to record the state of the files
-```
+Then, Bob will submit a pull request using `gh` and use `in-toto-run` to
+record the state of the files to create a link.
+
+```shell
 gh pr create --title "Update version" --body "Update version number"
 in-toto-run -n pull-request -m  . -p github:in-toto/ite-4-demo-test-repo:pr:{pr number} --key ../bob --no-command
 ```
 
-### Approve and merge PR (Alice)
-Now Alice will review Bob's PR, approve it and merged it
-```
+### 5. Approve and merge PR (Alice)
+
+Alice will now review Bob's PR, approve it, and merged it.
+
+```shell
 cd ../../owner_alice/ite-4-demo-test-repo
 gh pr merge {pr number}
 in-toto-run -n merge-pr -m . -p . --key ../alice --no-command
 ```
 
-### Create a tag (Alice)
-Then Alice will create a tag and release it
+### 6. Create a tag (Alice)
+
+Then, Alice will tag the new merge commit and record the action.
+
+```shell
+in-toto-run -n tag -m . -p . --key ../alice -- git tag v0.1
 ```
-in-toto-run -n tag -m . -p . --key ../alice -- git tag v 0.1
+
+### 7. Build the Container Image locally (Alice)
+
+Alice can now build the container image.
+
+```shell
+docker build . --tag ite-4-demo
 ```
