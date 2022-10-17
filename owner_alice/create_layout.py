@@ -20,36 +20,62 @@ def main():
             pub_key_bob["keyid"]: pub_key_bob,
         },
         "steps": [{
-            "name": "update-version",
-            "expected_materials": [["ALLOW", "foo.py"], ["ALLOW", "*"]],
-            "expected_products": [["MODIFY", "foo.py"]],
-            "pubkeys": [pub_key_bob["keyid"]],
-            "expected_command": [],
-            "threshold": 1,
-        }, {
             "name":
-            "pull-request",
-            "expected_materials":
-            [["MATCH", "*", "WITH", "PRODUCTS", "FROM", "update-version"]],
-            "expected_products": [["ALLOW", "*"]],
+            "commit-changes",
+            "expected_materials": [["REQUIRE", "git:commit"],
+                                   ["DISALLOW", "*"]],
+            "expected_products": [["MODIFY", "git:commit"], ["DISALLOW", "*"]],
             "pubkeys": [pub_key_bob["keyid"]],
             "expected_command": [],
             "threshold":
             1,
         }, {
-            "name": "merge-pr",
-            "expected_materials": [["ALLOW", "*"]],
-            "expected_products": [["ALLOW", "*"]],
-            "pubkeys": [pub_key_alice["keyid"]],
+            "name":
+            "open-pr",
+            "expected_materials": [[
+                "MATCH", "git:commit", "WITH", "PRODUCTS", "FROM",
+                "commit-changes"
+            ], ["DISALLOW", "*"]],
+            "expected_products": [["CREATE", "github:*"], ["DISALLOW", "*"]],
+            "pubkeys": [pub_key_bob["keyid"]],
             "expected_command": [],
-            "threshold": 1,
+            "threshold":
+            1,
         }, {
-            "name": "tag",
-            "expected_materials": [["ALLOW", "*"]],
-            "expected_products": [["ALLOW", "*"]],
+            "name":
+            "merge-pr",
+            "expected_materials":
+            [["MATCH", "github:*", "WITH", "PRODUCTS", "FROM", "open-pr"],
+             ["MATCH", "git:commit", "WITH", "MATERIALS", "FROM", "open-pr"],
+             ["DISALLOW", "*"]],
+            "expected_products": [["MODIFY", "git:commit"], ["DISALLOW", "*"]],
             "pubkeys": [pub_key_alice["keyid"]],
             "expected_command": [],
-            "threshold": 1,
+            "threshold":
+            1,
+        }, {
+            "name":
+            "tag",
+            "expected_materials":
+            [["MATCH", "git:commit", "WITH", "PRODUCTS", "FROM", "merge-pr"],
+             ["DISALLOW", "*"]],
+            "expected_products": [["CREATE", "git:tag:*"], ["DISALLOW", "*"]],
+            "pubkeys": [pub_key_alice["keyid"]],
+            "expected_command": [],
+            "threshold":
+            1,
+        }, {
+            "name":
+            "build-image",
+            "expected_materials":
+            [["MATCH", "git:commit", "WITH", "PRODUCTS", "FROM", "merge-pr"],
+             ["MATCH", "git:tag:*", "WITH", "PRODUCTS", "FROM", "tag"],
+             ["DISALLOW", "*"]],
+            "expected_products": [["CREATE", "docker://*"], ["DISALLOW", "*"]],
+            "pubkeys": [pub_key_alice["keyid"]],
+            "expected_command": [],
+            "threshold":
+            1,
         }],
         "inspect": [],
     })

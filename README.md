@@ -34,8 +34,8 @@ have the project locally.
 replace the repo link below with one pointing to your fork.
 
 ```shell
-git clone https://github.com/in-toto/ite-4-demo-test-repo.git functionary_bob/ite-4-demo-test-repo
-git clone https://github.com/in-toto/ite-4-demo-test-repo.git owner_alice/ite-4-demo-test-repo
+git clone https://github.com/in-toto/ite-4-demo-test-repo.git functionary_bob/project
+git clone https://github.com/in-toto/ite-4-demo-test-repo.git owner_alice/project
 ```
 
 ### 2. Define the software supply chain layout (Alice)
@@ -51,41 +51,39 @@ Before Bob makes any changes, he will first create a `feature` branch that will
 contain his changes.
 
 ```shell
-cd ../functionary_bob/ite-4-demo-test-repo
+cd ../functionary_bob/project
 git checkout -b feature
 ```
 
-Bob uses `in-toot-record` command to record the state of the files he will
-modify. The material will be latest merge-commit.
+Bob uses `in-toot-record` command to record the change in the commit hash. The
+material will be the latest commit on HEAD.
 
 ```shell
-# We use a generic uri to represent a Github entity
-# A github commit looks like: github:org/repo:commit:id
-
-in-toto-record start --step-name update-version --key ../bob -m github:in-toto/ite-4-demo-test-repo:commit:{previously merged commit id}
+in-toto-record start --step-name commit-changes --key ../bob -m git:commit
 ```
 
 Then, Bob uses an editor of his choice to update the version number in `foo.py`
+and commits the changes to the branch.
 
 ```shell
 # Change version number from v0 to v1
 sed -i.bak 's/v0/v1/' foo.py && rm foo.py.bak
+git add foo.py && git commit -m "update version"
 ```
 
 Finally, Bob records the state of the files after the modification and produces
 a link metadata file called `update-version.[Bob's keyid].link`.
 
 ```
-in-toto-record stop --step-name update-version --key ../bob -p foo.py
+in-toto-record stop --step-name commit-changes --key ../bob -p git:commit
 ```
 
 ### 4. Submit a pull request (Bob)
 
-Bob has done his work and will commit and push the changes to the remote repo.
+Now that Bob has commited his changes to his local repo, he will push the
+changes to the remote repo.
 
 ```shell
-git add foo.py
-git commit -m "update version"
 git push --set-upstream origin feature
 ```
 
@@ -94,17 +92,20 @@ record the state of the files to create a link.
 
 ```shell
 gh pr create --title "Update version" --body "Update version number"
-in-toto-run -n pull-request -m  . -p github:in-toto/ite-4-demo-test-repo:pr:{pr number} --key ../bob --no-command
+in-toto-run -n open-pr -m git:commit -p github:in-toto/ite-4-demo-test-repo:pr:{pr number} --key ../bob --no-command
 ```
 
 ### 5. Approve and merge PR (Alice)
 
-Alice will now review Bob's PR, approve it, and merged it.
+Alice will now review Bob's PR, approve it, and merge it. In order to record the
+merging, Alice will need to pull the new merge commit and record it.
 
 ```shell
-cd ../../owner_alice/ite-4-demo-test-repo
+cd ../../owner_alice/project
 gh pr merge {pr number}
-in-toto-run -n merge-pr -m . -p . --key ../alice --no-command
+in-toto-record start -n merge-pr -m github:in-toto/ite-4-demo-test-repo:pr:{pr number} git:commit --key ../alice
+git pull
+in-toto-record stop -n merge-pr -p git:commit --key ../alice
 ```
 
 ### 6. Create a tag (Alice)
@@ -112,7 +113,7 @@ in-toto-run -n merge-pr -m . -p . --key ../alice --no-command
 Then, Alice will tag the new merge commit and record the action.
 
 ```shell
-in-toto-run -n tag -m . -p . --key ../alice -- git tag v0.1
+in-toto-run -n tag -m git:commit -p git:tag:v0.1 --key ../alice -- git tag v0.1
 ```
 
 ### 7. Build the Container Image locally (Alice)
@@ -120,5 +121,5 @@ in-toto-run -n tag -m . -p . --key ../alice -- git tag v0.1
 Alice can now build the container image.
 
 ```shell
-docker build . --tag ite-4-demo
+in-toto-run -n build-image -k ../alice -m git:commit git:tag:v0.1 -p docker://ite-4-demo -- docker build . -f Containerfile --tag ite-4-demo
 ```
