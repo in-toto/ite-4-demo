@@ -5,12 +5,21 @@ A simple demo that shows some of the capabilities that ITE-4 enables.
 
 ## Demo setup
 
-Clone this repository recursively. It includes a monkey-patched version of
-in-toto. Install this version of in-toto to your machine.
+Clone this repository recursively and set up a virtual environment to contain
+all the dependencies for the demo.
 
 ```shell
-git clone --recursive https://github.com/in-toto/ite-4-demo.git
-cd ite-4-demo/in-toto
+git clone --recursive https://github.com/in-toto/ite-4-demo.git && cd ite-4-demo
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+This repo includes a monkey-patched version of in-toto. Install it on your 
+machine machine.
+
+```shell
+cd in-toto
 pip install .
 
 # Go back to the demo's home directory.
@@ -91,7 +100,10 @@ Then, Bob will submit a pull request using `gh` and use `in-toto-run` to
 record the state of the files to create a link.
 
 ```shell
-gh pr create --title "Update version" --body "Update version number"
+gh pr create --title "update version" --body "update version number"
+```
+
+```shell
 in-toto-run -n open-pr -m git:commit -p github:in-toto/ite-4-demo-test-repo:pr:{pr number} --key ../bob --no-command
 ```
 
@@ -103,6 +115,9 @@ merging, Alice will need to pull the new merge commit and record it.
 ```shell
 cd ../../owner_alice/project
 gh pr merge {pr number}
+```
+
+```shell
 in-toto-record start -n merge-pr -m github:in-toto/ite-4-demo-test-repo:pr:{pr number} git:commit --key ../alice
 git pull
 in-toto-record stop -n merge-pr -p git:commit --key ../alice
@@ -122,4 +137,19 @@ Alice can now build the container image.
 
 ```shell
 in-toto-run -n build-image -k ../alice -m git:commit git:tag:v0.1 -p docker://ite-4-demo -- docker build . -f Containerfile --tag ite-4-demo
+```
+
+### 8. Verify the workflow
+
+Copy the layout and the links to a new directory to verify the integrity of the
+workflow.
+
+```shell
+cd ../..
+mkdir final_product
+cp functionary_bob/project/*.link final_product
+cp owner_alice/project/*.link final_product
+cp owner_alice/root.layout final_product
+cd final_product
+in-toto-verify --layout root.layout --layout-key ../owner_alice/alice.pub
 ```

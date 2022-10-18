@@ -1,3 +1,7 @@
 venv/
 project/
 ite-4-demo-test-repo/
+
+*.layout
+*.link
+final_product/

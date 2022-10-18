@@ -46,8 +46,10 @@ def main():
             "merge-pr",
             "expected_materials":
             [["MATCH", "github:*", "WITH", "PRODUCTS", "FROM", "open-pr"],
-             ["MATCH", "git:commit", "WITH", "MATERIALS", "FROM", "open-pr"],
-             ["DISALLOW", "*"]],
+             [
+                 "MATCH", "git:commit", "WITH", "MATERIALS", "FROM",
+                 "commit-changes"
+             ], ["DISALLOW", "*"]],
             "expected_products": [["MODIFY", "git:commit"], ["DISALLOW", "*"]],
             "pubkeys": [pub_key_alice["keyid"]],
             "expected_command": [],
