@@ -30,7 +30,7 @@ def main():
             1,
         }, {
             "name":
-            "open-pr",
+            "create-pr",
             "expected_materials": [[
                 "MATCH", "git:commit", "WITH", "PRODUCTS", "FROM",
                 "commit-changes"
@@ -44,7 +44,7 @@ def main():
             "name":
             "merge-pr",
             "expected_materials":
-            [["MATCH", "github:*", "WITH", "PRODUCTS", "FROM", "open-pr"],
+            [["MATCH", "github:*", "WITH", "PRODUCTS", "FROM", "create-pr"],
              [
                  "MATCH", "git:commit", "WITH", "MATERIALS", "FROM",
                  "commit-changes"

@@ -29,14 +29,9 @@ cd ..
 For this demo, make sure you have the [github cli tool](https://cli.github.com/)
 installed.
 
-
-## Run the demo commands
-
-### 1. Clone project source code (Bob & Alice)
-
-Since we don't have the project installed locally, we will be cloning them 
-ourselves. But in the real world, it is more likely that Bob and Alice already
-have the project locally.
+Also, clone test projects into the home directories of the "players" involved,
+Alice and Bob. In the real world, it is more likely that both already have the
+project installed locally.
 
 **Note:** If you are testing this demo locally, use a personal fork of the
 `ite-4-demo-test-repo` since you will need access to make and merge PR's. So
@@ -47,14 +42,16 @@ git clone git@github.com:in-toto/ite-4-demo-test-repo.git functionary_bob/projec
 git clone git@github.com:in-toto/ite-4-demo-test-repo.git owner_alice/project
 ```
 
-### 2. Define the software supply chain layout (Alice)
+## Run the demo commands
+
+### 1. Define the software supply chain layout (Alice)
 
 ```shell
 cd owner_alice
 python create_layout.py
 ```
 
-### 3. Update version number (Bob)
+### 2. Make and commit changes to the project (Bob)
 
 Before Bob makes any changes, he will first create a `feature` branch that will
 contain his changes.
@@ -87,7 +84,7 @@ a link metadata file called `update-version.[Bob's keyid].link`.
 in-toto-record stop --step-name commit-changes --key ../bob -p git:commit
 ```
 
-### 4. Submit a pull request (Bob)
+### 3. Create a pull request (Bob)
 
 Now that Bob has commited his changes to his local repo, he will push the
 changes to the remote repo.
@@ -97,51 +94,48 @@ git push --set-upstream origin feature
 ```
 
 Then, Bob will submit a pull request using `gh` and use `in-toto-run` to
-record the state of the files to create a link.
+record the state of the files to create a link. The output of the `gh` command
+should give you the pull request number, replace the placeholders in the
+following commands with it.
 
 ```shell
+in-toto-record start -n create-pr -m git:commit --key ../bob
 gh pr create --title "update version" --body "update version number"
+in-toto-record stop -n create-pr -p github:in-toto/ite-4-demo-test-repo:pr:{pr number} --key ../bob
 ```
 
-```shell
-in-toto-run -n open-pr -m git:commit -p github:in-toto/ite-4-demo-test-repo:pr:{pr number} --key ../bob --no-command
-```
-
-### 5. Approve and merge PR (Alice)
+### 4. Approve and merge PR (Alice)
 
 Alice will now review Bob's PR, approve it, and merge it. In order to record the
 merging, Alice will need to pull the new merge commit and record it.
 
 ```shell
 cd ../../owner_alice/project
-gh pr merge {pr number}
-```
-
-```shell
 in-toto-record start -n merge-pr -m github:in-toto/ite-4-demo-test-repo:pr:{pr number} git:commit --key ../alice
+gh pr merge {pr number}
 git pull
 in-toto-record stop -n merge-pr -p git:commit --key ../alice
 ```
 
-### 6. Create a tag (Alice)
+### 5. Create a tag (Alice)
 
 Then, Alice will tag the new merge commit and record the action.
 
 ```shell
-in-toto-run -n tag -m git:commit -p git:tag:v0.1 --key ../alice -- git tag v0.1
+in-toto-run -n tag -m git:commit -p git:tag:release --key ../alice -- git tag release
 ```
 
-### 7. Build the Container Image locally (Alice)
+### 6. Build the container image locally (Alice)
 
 Alice can now build the container image.
 
 ```shell
-in-toto-record start -n build-image -k ../alice -m git:commit git:tag:v0.1
+in-toto-record start -n build-image -k ../alice -m git:commit git:tag:release
 docker build . -f Containerfile --tag ite-4-demo
 in-toto-record stop -n build-image -k ../alice -p docker://ite-4-demo
 ```
 
-### 8. Verify the workflow
+### 7. Verify the workflow (Client)
 
 Copy the layout and the links to a new directory to verify the integrity of the
 workflow.
@@ -154,4 +148,22 @@ cp owner_alice/project/*.link final_product
 cp owner_alice/root.layout final_product
 cd final_product
 in-toto-verify --layout root.layout --layout-key ../owner_alice/alice.pub
+```
+## Cleaning up and automated run through
+
+### Clean slate
+
+If you want to run the demo again, remove all the files and reset all of the
+repos by running the following script.
+
+```shell
+python3 run_demo.py --clean
+```
+
+### Automated run through
+
+Use the same script to have an automated run through of the demo.
+
+```shell
+python3 run_demo.py
 ```
