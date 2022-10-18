@@ -9,7 +9,7 @@ Clone this repository recursively and set up a virtual environment to contain
 all the dependencies for the demo.
 
 ```shell
-git clone --recursive https://github.com/in-toto/ite-4-demo.git && cd ite-4-demo
+git clone --recursive git@github.com:in-toto/ite-4-demo.git && cd ite-4-demo
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
@@ -43,8 +43,8 @@ have the project locally.
 replace the repo link below with one pointing to your fork.
 
 ```shell
-git clone https://github.com/in-toto/ite-4-demo-test-repo.git functionary_bob/project
-git clone https://github.com/in-toto/ite-4-demo-test-repo.git owner_alice/project
+git clone git@github.com:in-toto/ite-4-demo-test-repo.git functionary_bob/project
+git clone git@github.com:in-toto/ite-4-demo-test-repo.git owner_alice/project
 ```
 
 ### 2. Define the software supply chain layout (Alice)
