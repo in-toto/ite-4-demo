@@ -136,7 +136,9 @@ in-toto-run -n tag -m git:commit -p git:tag:v0.1 --key ../alice -- git tag v0.1
 Alice can now build the container image.
 
 ```shell
-in-toto-run -n build-image -k ../alice -m git:commit git:tag:v0.1 -p docker://ite-4-demo -- docker build . -f Containerfile --tag ite-4-demo
+in-toto-record start -n build-image -k ../alice -m git:commit git:tag:v0.1
+docker build . -f Containerfile --tag ite-4-demo
+in-toto-record stop -n build-image -k ../alice -p docker://ite-4-demo
 ```
 
 ### 8. Verify the workflow
