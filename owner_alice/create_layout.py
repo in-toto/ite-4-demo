@@ -8,9 +8,9 @@ def main():
     priv_key_alice = interface.import_rsa_privatekey_from_file("alice")
 
     # Load public keys
-    pub_key_alice = interface.import_rsa_publickey_from_file(
+    pub_key_alice = interface.import_rsa_publickey_from_file("alice.pub")
+    pub_key_bob = interface.import_rsa_publickey_from_file(
         "../functionary_bob/bob.pub")
-    pub_key_bob = interface.import_rsa_publickey_from_file("alice.pub")
 
     layout = Layout.read({
         "_type":
@@ -22,8 +22,7 @@ def main():
         "steps": [{
             "name":
             "commit-changes",
-            "expected_materials": [["REQUIRE", "git:commit"],
-                                   ["DISALLOW", "*"]],
+            "expected_materials": [["REQUIRE", "git:commit"]],
             "expected_products": [["MODIFY", "git:commit"], ["DISALLOW", "*"]],
             "pubkeys": [pub_key_bob["keyid"]],
             "expected_command": [],
