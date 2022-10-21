@@ -1,11 +1,13 @@
 import os
+import re
 import sys
 import shlex
 import subprocess
 import argparse
-from shutil import copyfile, copytree, rmtree
+from shutil import copyfile, rmtree
 
 NO_PROMPT = False
+TESTREPO = "in-toto/ite-4-demo-test-repo"
 
 
 def prompt_key(prompt):
@@ -85,13 +87,12 @@ def supply_chain():
     pr_link = subprocess.check_output(shlex.split(create_pr_cmd))
     pr_number = pr_link.decode().replace('\n', '').split('/')[-1]
 
-    create_pr_stop_cmd = (
-        "in-toto-record"
-        " stop"
-        " --verbose"
-        " --step-name create-pr"
-        " --key ../bob"
-        f" --products github:in-toto/ite-4-demo-test-repo:pr:{pr_number}")
+    create_pr_stop_cmd = ("in-toto-record"
+                          " stop"
+                          " --verbose"
+                          " --step-name create-pr"
+                          " --key ../bob"
+                          f" --products github:{TESTREPO}:pr:{pr_number}")
     print(create_pr_stop_cmd)
     subprocess.call(shlex.split(create_pr_stop_cmd))
 
@@ -103,8 +104,7 @@ def supply_chain():
         " --verbose"
         " --step-name merge-pr"
         " --key ../alice"
-        f" --materials github:in-toto/ite-4-demo-test-repo:pr:{pr_number} git:commit"
-    )
+        f" --materials github:{TESTREPO}:pr:{pr_number} git:commit")
     print(merge_pr_start_cmd)
     subprocess.call(shlex.split(merge_pr_start_cmd))
 
@@ -188,6 +188,22 @@ def supply_chain():
     print("Return value: " + str(retval))
 
 
+def extract_repo(uri):
+    ssh_pattern = r'^git@github.com:([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+).git$'
+    repo = re.findall(ssh_pattern, uri)
+    if len(repo) > 0:
+        return repo[0]
+    https_pattern = r'^https://github.com/([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+).git$'
+    repo = re.findall(https_pattern, uri)
+    if len(repo) > 0:
+        return repo[0]
+    regular_pattern = r'^([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)$'
+    repo = re.findall(regular_pattern, uri)
+    if len(repo) > 0:
+        return repo[0]
+    sys.exit(f'failed to extract github repo from "{uri}"')
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-n",
@@ -199,6 +215,11 @@ def main():
                         help="Remove files created during demo.",
                         action="store_true")
     args = parser.parse_args()
+
+    if repo := os.getenv("TESTREPO"):
+        global TESTREPO
+        TESTREPO = extract_repo(repo)
+        print(TESTREPO)
 
     if args.clean:
         files_to_delete = [
@@ -218,8 +239,14 @@ def main():
                 rmtree(path)
 
         # reset project
+        os.chdir("owner_alice/project")
+        subprocess.call(shlex.split("git checkout main"))
+        subprocess.call(shlex.split("git reset --hard"))
+        subprocess.call(shlex.split("git pull"))
+        os.chdir("../..")
         os.chdir("functionary_bob/project")
         subprocess.call(shlex.split("git checkout main"))
+        subprocess.call(shlex.split("git reset --hard"))
         subprocess.call(shlex.split("git branch -D feature"))
         subprocess.call(shlex.split("git pull"))
         os.chdir("../..")

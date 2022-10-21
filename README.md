@@ -5,44 +5,22 @@ A simple demo that shows some of the capabilities that ITE-4 enables.
 
 ## Demo setup
 
-Clone this repository recursively and set up a virtual environment to contain
-all the dependencies for the demo.
+After cloning this test repo, run the `setup_demo.sh` script to setup for the
+demo. Make sure to set the environment variable `TESTREPO` to a fork of
+`in-toto/ite-4-demo-test-repo` in order to create and merge PR's, or a repo
+with files of the same name.
 
-```shell
-git clone --recursive git@github.com:in-toto/ite-4-demo.git && cd ite-4-demo
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-```
-
-This repo includes a monkey-patched version of in-toto. Install it on your 
-machine machine.
-
-```shell
-cd in-toto
-pip install .
-
-# Go back to the demo's home directory.
-cd ..
-```
+The script will clone test projects into the home directories of the "players"
+involved, Alice and Bob. In the real world, it is more likely that both already
+have the project installed locally.
 
 For this demo, make sure you have the [github cli tool](https://cli.github.com/)
 installed.
 
-Also, clone test projects into the home directories of the "players" involved,
-Alice and Bob. In the real world, it is more likely that both already have the
-project installed locally.
-
-**Note:** If you are testing this demo locally, use a personal fork of the
-`ite-4-demo-test-repo` since you will need access to make and merge PR's. So
-replace the repo link below with one pointing to your fork.
-
-```shell
-git clone git@github.com:in-toto/ite-4-demo-test-repo.git functionary_bob/project
-git clone git@github.com:in-toto/ite-4-demo-test-repo.git owner_alice/project
-```
-
 ## Run the demo commands
+
+**NOTE:** Some commands below are making calls to the test repo, make sure to
+change any references to `in-toto/ite-4-demo-test-repo` to the repo you are using.
 
 ### 1. Define the software supply chain layout (Alice)
 
@@ -162,7 +140,11 @@ python3 run_demo.py --clean
 
 ### Automated run through
 
-Use the same script to have an automated run through of the demo.
+Use the same script to have an automated run through of the demo. If you are
+running the demo using a repo other than `in-toto/ite-4-demo-test-repo`, make
+sure you have the environment variable `TESTREPO` set to the corresponding repo.
+
+It should be able to handle repos setup with either HTTPS and SSH.
 
 ```shell
 python3 run_demo.py
