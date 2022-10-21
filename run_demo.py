@@ -187,6 +187,84 @@ def supply_chain():
     retval = subprocess.call(shlex.split(verify_cmd))
     print("Return value: " + str(retval))
 
+    # ====================================================================
+    # Tampering with the supply chain
+    # ====================================================================
+
+    prompt_key("Tamper with the supply chain (Adversary)")
+    os.chdir("../owner_alice/project")
+    tamper_cmd = "echo 'something evil' >> foo.py"
+    print(tamper_cmd)
+    subprocess.call(tamper_cmd, shell=True)
+
+    print(add_changes_cmd)
+    subprocess.call(shlex.split(add_changes_cmd))
+
+    print(commit_changes_cmd)
+    subprocess.call(shlex.split(commit_changes_cmd))
+
+    prompt_key("[Continue as if nothing happened]\nCreate a Tag (Alice)")
+    tag_cmd = ("in-toto-run"
+               " --verbose"
+               " --step-name tag"
+               " --key ../alice"
+               " --materials git:commit"
+               " --products git:tag:release"
+               " -- git tag release")
+    print(tag_cmd)
+    subprocess.call(shlex.split(tag_cmd))
+
+    prompt_key("Build the container image (Alice)")
+    build_container_start_cmd = ("in-toto-record"
+                                 " start"
+                                 " --verbose"
+                                 " --step-name build-image"
+                                 " --key ../alice"
+                                 " --materials git:commit git:tag:release")
+    print(build_container_start_cmd)
+    subprocess.call(shlex.split(build_container_start_cmd))
+
+    build_container_cmd = ("docker build ."
+                           " --file Containerfile"
+                           " --tag ite-4-demo")
+    print(build_container_cmd)
+    subprocess.call(shlex.split(build_container_cmd))
+
+    build_container_stop_cmd = ("in-toto-record"
+                                " stop"
+                                " --verbose"
+                                " --step-name build-image"
+                                " --key ../alice"
+                                " --products docker://ite-4-demo")
+    print(build_container_stop_cmd)
+    subprocess.call(shlex.split(build_container_stop_cmd))
+
+    prompt_key("Create final tampered product")
+    os.chdir("../..")
+    os.makedirs("final_product", exist_ok=True)
+    copyfile("owner_alice/root.layout", "final_product/root.layout")
+    copyfile("functionary_bob/project/commit-changes.776a00e2.link",
+             "final_product/commit-changes.776a00e2.link")
+    copyfile("functionary_bob/project/create-pr.776a00e2.link",
+             "final_product/create-pr.776a00e2.link")
+    copyfile("owner_alice/project/merge-pr.556caebd.link",
+             "final_product/merge-pr.556caebd.link")
+    copyfile("owner_alice/project/tag.556caebd.link",
+             "final_product/tag.556caebd.link")
+    copyfile("owner_alice/project/build-image.556caebd.link",
+             "final_product/build-image.556caebd.link")
+
+    prompt_key("Verify final tampered product (Client)")
+    os.chdir("final_product")
+    copyfile("../owner_alice/alice.pub", "alice.pub")
+    verify_cmd = ("in-toto-verify"
+                  " --verbose"
+                  " --layout root.layout"
+                  " --layout-key alice.pub")
+    print(verify_cmd)
+    retval = subprocess.call(shlex.split(verify_cmd))
+    print("Return value: " + str(retval))
+
 
 def extract_repo(uri):
     ssh_pattern = r'^git@github.com:([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+).git$'
@@ -242,13 +320,13 @@ def main():
         os.chdir("owner_alice/project")
         subprocess.call(shlex.split("git checkout main"))
         subprocess.call(shlex.split("git reset --hard"))
-        subprocess.call(shlex.split("git pull"))
+        subprocess.call(shlex.split("git pull -f"))
         os.chdir("../..")
         os.chdir("functionary_bob/project")
         subprocess.call(shlex.split("git checkout main"))
         subprocess.call(shlex.split("git reset --hard"))
         subprocess.call(shlex.split("git branch -D feature"))
-        subprocess.call(shlex.split("git pull"))
+        subprocess.call(shlex.split("git pull -f"))
         os.chdir("../..")
 
         sys.exit(0)
