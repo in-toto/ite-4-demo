@@ -120,13 +120,65 @@ workflow.
 
 ```shell
 cd ../..
+
+# Set up the final product
 mkdir final_product
 cp functionary_bob/project/*.link final_product
 cp owner_alice/project/*.link final_product
 cp owner_alice/root.layout final_product
 cd final_product
+
+# Verify the product
 in-toto-verify --layout root.layout --layout-key ../owner_alice/alice.pub
 ```
+
+### 8. Tamper with the supply chain (Adversary)
+
+Now, let’s try to tamper with the software supply chain. Suppose someone added
+a new commit to Alice's source code before she could tag the project and build
+the container.
+
+```shell
+cd ../owner_alice/project
+echo 'something evil' >> foo.py
+git add foo.py && git commit --amend --no-edit
+```
+
+With the changes now in the project, without Alice's knowledge, it will be
+present in the container.
+
+```shell
+# Tag the changed commit
+in-toto-run -n tag -m git:commit -p git:tag:release --key ../alice -- git tag release
+
+# Build the container
+in-toto-record start -n build-image -k ../alice -m git:commit git:tag:release
+docker build . -f Containerfile --tag ite-4-demo
+in-toto-record stop -n build-image -k ../alice -p docker://ite-4-demo
+
+# Set up the tampered product
+cp functionary_bob/project/*.link final_product
+cp owner_alice/project/*.link final_product
+cp owner_alice/root.layout final_product
+cd final_product
+```
+
+### 9. Verifying the malicious product (Client)
+
+```shell
+in-toto-verify --verbose --layout root.layout --layout-key ../owner_alice/alice.pub
+```
+
+This time, `in-toto-verify` will detect that the resulting commit from the step
+`merge-pr` was not used to tag the project nor build the container image and
+will therefore fail verification and return with a non-zero value. Running it
+in verbose mode will show this in detail.
+
+```shell
+echo $?
+# should print 1
+```
+
 ## Cleaning up and automated run through
 
 ### Clean slate

@@ -200,42 +200,21 @@ def supply_chain():
     print(add_changes_cmd)
     subprocess.call(shlex.split(add_changes_cmd))
 
-    print(commit_changes_cmd)
-    subprocess.call(shlex.split(commit_changes_cmd))
+    commit_malicious_change_cmd = "git commit --amend --no-edit"
+    print(commit_malicious_change_cmd)
+    subprocess.call(shlex.split(commit_malicious_change_cmd))
 
     prompt_key("[Continue as if nothing happened]\nCreate a Tag (Alice)")
-    tag_cmd = ("in-toto-run"
-               " --verbose"
-               " --step-name tag"
-               " --key ../alice"
-               " --materials git:commit"
-               " --products git:tag:release"
-               " -- git tag release")
     print(tag_cmd)
     subprocess.call(shlex.split(tag_cmd))
 
     prompt_key("Build the container image (Alice)")
-    build_container_start_cmd = ("in-toto-record"
-                                 " start"
-                                 " --verbose"
-                                 " --step-name build-image"
-                                 " --key ../alice"
-                                 " --materials git:commit git:tag:release")
     print(build_container_start_cmd)
     subprocess.call(shlex.split(build_container_start_cmd))
 
-    build_container_cmd = ("docker build ."
-                           " --file Containerfile"
-                           " --tag ite-4-demo")
     print(build_container_cmd)
     subprocess.call(shlex.split(build_container_cmd))
 
-    build_container_stop_cmd = ("in-toto-record"
-                                " stop"
-                                " --verbose"
-                                " --step-name build-image"
-                                " --key ../alice"
-                                " --products docker://ite-4-demo")
     print(build_container_stop_cmd)
     subprocess.call(shlex.split(build_container_stop_cmd))
 
@@ -257,10 +236,6 @@ def supply_chain():
     prompt_key("Verify final tampered product (Client)")
     os.chdir("final_product")
     copyfile("../owner_alice/alice.pub", "alice.pub")
-    verify_cmd = ("in-toto-verify"
-                  " --verbose"
-                  " --layout root.layout"
-                  " --layout-key alice.pub")
     print(verify_cmd)
     retval = subprocess.call(shlex.split(verify_cmd))
     print("Return value: " + str(retval))
