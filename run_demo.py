@@ -277,11 +277,8 @@ def main():
     if args.clean:
         files_to_delete = [
             "owner_alice/root.layout",
-            "owner_alice/project/merge-pr.556caebd.link",
-            "owner_alice/project/tag.556caebd.link",
-            "owner_alice/project/build-image.556caebd.link",
-            "functionary_bob/project/commit-changes.776a00e2.link",
-            "functionary_bob/project/create-pr.776a00e2.link",
+            "owner_alice/project",
+            "functionary_bob/project",
             "final_product",
         ]
 
@@ -292,17 +289,8 @@ def main():
                 rmtree(path)
 
         # reset project
-        os.chdir("owner_alice/project")
-        subprocess.call(shlex.split("git checkout main"))
-        subprocess.call(shlex.split("git reset --hard"))
-        subprocess.call(shlex.split("git pull -f"))
-        os.chdir("../..")
-        os.chdir("functionary_bob/project")
-        subprocess.call(shlex.split("git checkout main"))
-        subprocess.call(shlex.split("git reset --hard"))
-        subprocess.call(shlex.split("git branch -D feature"))
-        subprocess.call(shlex.split("git pull -f"))
-        os.chdir("../..")
+        subprocess.call(shlex.split("git clone git@github.com:in-toto/ite-4-demo-test-repo owner_alice/project"))
+        subprocess.call(shlex.split("git clone git@github.com:in-toto/ite-4-demo-test-repo functionary_bob/project"))
 
         sys.exit(0)
     if args.no_prompt:
